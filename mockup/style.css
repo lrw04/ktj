@@ -1,0 +1,96 @@
+main {
+    max-width: 80ex;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+nav {
+    height: 2em;
+}
+
+nav div {
+    float: right;
+}
+
+table {
+    width: 100%;
+    padding-top: 0.1ex;
+    border-top: 0.1ex solid black;
+    padding-bottom: 0.1ex;
+    border-bottom: 0.1ex solid black;
+    border-collapse: collapse;
+}
+
+.center {
+    text-align: center;
+}
+
+.ac {
+    color: green;
+}
+
+.wa {
+    color: red;
+}
+
+.tle {
+    color: darkblue;
+}
+
+.mle {
+    color: darkblue;
+}
+
+.re {
+    color: purple;
+}
+
+.ce {
+    color: brown;
+}
+
+.uke {
+    color: purple;
+}
+
+.sec {
+    color: blue;
+}
+
+.pending {
+    color: darkgray;
+}
+
+thead {
+    padding-bottom: 0.1ex;
+    border-bottom: 0.1ex solid black;
+}
+
+textarea {
+    width: 100%;
+}
+
+input {
+    width: 100%;
+}
+
+figure {
+    text-align: center;
+}
+
+figure img {
+    max-width: 100%;
+}
+
+pre {
+    background-color: #f0f0f0;
+}
+
+footer {
+    text-align: center;
+    margin-top: 2em;
+}
+
+h1 {
+    text-align: center;
+}
