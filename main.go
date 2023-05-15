@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -44,11 +45,12 @@ type problem struct {
 }
 
 type contest struct {
-	Title    string    `json:"title"`
-	Start    string    `json:"start"`
-	Duration int64     `json:"duration"` // minutes
-	Freeze   int64     `json:"freeze"`   // minutes
-	Problems []problem `json:"problems"`
+	Title     string            `json:"title"`
+	Start     string            `json:"start"`
+	Duration  int64             `json:"duration"` // minutes
+	Freeze    int64             `json:"freeze"`   // minutes
+	Problems  []problem         `json:"problems"`
+	Languages map[string]string `json:"languages"`
 }
 
 type config struct {
@@ -90,7 +92,6 @@ var sessionCoding cipher.Block
 
 func encodeSession(s session) string {
 	b, err := json.Marshal(s)
-	fmt.Println(b)
 	check(err)
 	ciphertext := make([]byte, aes.BlockSize+len(b))
 	iv := ciphertext[:aes.BlockSize]
@@ -131,7 +132,11 @@ func getSession(r *http.Request) session {
 	return sess
 }
 
-var templates = template.Must(template.ParseFiles(
+var templates = template.Must(template.New("templates").Funcs(template.FuncMap{
+	"time_format": func(t time.Time) string {
+		return t.Format("2006-01-02 15:04:05")
+	},
+}).ParseFiles(
 	"templates/home.html",
 	"templates/login.html",
 	"templates/login-fail.html",
@@ -153,12 +158,12 @@ func notStarted() bool {
 	return time.Now().Before(startTime)
 }
 
-func rankingFrozen() bool {
-	return time.Now().Before(freezeTime)
+func rankingFrozen(t time.Time) bool {
+	return t.After(freezeTime)
 }
 
-func contestEnded() bool {
-	return time.Now().Before(endTime)
+func contestEnded(t time.Time) bool {
+	return t.After(endTime)
 }
 
 type problem_list_template struct {
@@ -179,6 +184,7 @@ type problem_page_template struct {
 	Problem      problem
 	Index        string
 	Session      session
+	Contest      contest
 }
 
 func problemPage(w http.ResponseWriter, r *http.Request) {
@@ -198,23 +204,129 @@ func problemPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println(prob_part)
-	renderTemplate(w, "problem", problem_page_template{probs.Title, probs.Problems[prob_index], prob_part, getSession(r)})
+	renderTemplate(w, "problem", problem_page_template{probs.Title, probs.Problems[prob_index], prob_part, getSession(r), probs})
 }
 
-// TODO
+type submission struct {
+	ID           int64
+	User         string
+	Time         time.Time
+	Language     string
+	LanguageName string
+	Code         string
+	ProblemIndex int64
+	Verdict      string
+	TimeUsage    int64
+	MemoryUsage  int64
+}
+
+func getSubmission(id int64) (submission, error) {
+	var sub submission
+	var problem string
+	err := db.QueryRow("select id, user, time, language, code, problem, verdict, time_usage, memory_usage from submissions where id = ?", id).Scan(&sub.ID, &sub.User, &sub.Time, &sub.Language, &sub.Code, &problem, &sub.Verdict, &sub.TimeUsage, &sub.MemoryUsage)
+	sub.LanguageName = probs.Languages[sub.Language]
+	if err != nil {
+		return sub, err
+	}
+	sub.ProblemIndex = int64(problem[0] - 'A')
+	return sub, nil
+}
+
+type submission_page_template struct {
+	Session      session
+	Submission   submission
+	Contest      contest
+	Problem      string
+	ProblemTitle string
+	StatusShown  bool
+	CodeShown    bool
+}
+
 func submissionPage(w http.ResponseWriter, r *http.Request) {
 	if notStarted() {
 		renderTemplate(w, "not-started", probs)
 		return
 	}
+	// /submission/
+	ids := r.URL.Path[12:]
+	fmt.Println(r.URL.Path)
+	id, err := strconv.ParseInt(ids, 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	sub, err := getSubmission(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	fmt.Println(contestEnded(time.Now()))
+	renderTemplate(w, "submission", submission_page_template{getSession(r), sub, probs, string('A' + sub.ProblemIndex), probs.Problems[sub.ProblemIndex].Title, (!rankingFrozen(sub.Time)) || contestEnded(time.Now()) || getSession(r).User == sub.User, contestEnded(time.Now()) || getSession(r).User == sub.User})
 }
 
-// TODO
 func submissionHandler(w http.ResponseWriter, r *http.Request) {
 	if notStarted() {
 		renderTemplate(w, "not-started", probs)
 		return
 	}
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+	// /submit/
+	problem := r.URL.Path[8:]
+	if len(problem) > 1 {
+		http.NotFound(w, r)
+		return
+	}
+	fmt.Println(getSession(r))
+	fmt.Println(r.FormValue("language"))
+	fmt.Println(r.FormValue("code"))
+	result, err := db.Exec(`insert into submissions (user, time, language, code, problem, verdict, time_usage, memory_usage) values (?, ?, ?, ?, ?, ?, ?, ?)`, getSession(r).User, time.Now(), r.FormValue("language"), r.FormValue("code"), problem, "pending", 0, 0)
+	check(err)
+	id, err := result.LastInsertId()
+	check(err)
+	http.Redirect(w, r, "/submission/"+strconv.Itoa(int(id)), http.StatusFound)
+}
+
+type submission_listing struct {
+	ID           int64
+	User         string
+	Time         time.Time
+	Language     string
+	LanguageName string
+	Code         string
+	Problem      string
+	ProblemIndex int64
+	ProblemTitle string
+	Verdict      string
+	TimeUsage    int64
+	MemoryUsage  int64
+	StatusShown  bool
+}
+
+func getSubmissions() []submission_listing {
+	rows, err := db.Query(`select id, user, time, language, code, problem, verdict, time_usage, memory_usage from submissions order by id desc`)
+	check(err)
+	l := make([]submission_listing, 0)
+	for rows.Next() {
+		var c submission_listing
+		err := rows.Scan(&c.ID, &c.User, &c.Time, &c.Language, &c.Code, &c.Problem, &c.Verdict, &c.TimeUsage, &c.MemoryUsage)
+		check(err)
+		c.ProblemIndex = int64(c.Problem[0] - 'A')
+		c.ProblemTitle = probs.Problems[c.ProblemIndex].Title
+		c.LanguageName = probs.Languages[c.Language]
+		l = append(l, c)
+	}
+	err = rows.Err()
+	check(err)
+	return l
+}
+
+type submissions_page_template struct {
+	Listing []submission_listing
+	Contest contest
+	Session session
 }
 
 // TODO
@@ -223,6 +335,11 @@ func submissionsPage(w http.ResponseWriter, r *http.Request) {
 		renderTemplate(w, "not-started", probs)
 		return
 	}
+	cont := submissions_page_template{getSubmissions(), probs, getSession(r)}
+	for i := 0; i < len(cont.Listing); i++ {
+		cont.Listing[i].StatusShown = (!rankingFrozen(cont.Listing[i].Time)) || contestEnded(time.Now()) || getSession(r).User == cont.Listing[i].User
+	}
+	renderTemplate(w, "submissions", cont)
 }
 
 // TODO
@@ -266,10 +383,40 @@ func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
+func schema() {
+	q := `create table if not exists submissions (
+		id integer primary key autoincrement,
+		user text not null,
+		time date not null,
+		language text not null,
+		code text not null,
+		problem text not null,
+		verdict text not null,
+		time_usage integer not null,
+		memory_usage integer not null
+	);
+	create table if not exists standings (
+		user text not null,
+		score integer not null,
+		penalty integer not null,
+		status text not null
+	);
+	create table if not exists standings_disp (
+		user text not null,
+		score integer not null,
+		penalty integer not null,
+		status text not null
+	);`
+	_, err := db.Exec(q)
+	check(err)
+}
+
 func main() {
 	wd = os.Args[1]
 	var err error
 	db, err = sql.Open("sqlite", path.Join(wd, "data.sqlite"))
+	schema()
+
 	check(err)
 	probs_s, err := os.ReadFile(path.Join(wd, "contest.json"))
 	check(err)
@@ -283,7 +430,7 @@ func main() {
 
 	loc, err := time.LoadLocation(cfg.TimeZone)
 	check(err)
-	startTime, err = time.ParseInLocation("2006/01/02 15:04", probs.Start, loc)
+	startTime, err = time.ParseInLocation("2006-01-02 15:04", probs.Start, loc)
 	check(err)
 	freezeTime = startTime.Add(time.Minute * time.Duration(probs.Freeze))
 	endTime = startTime.Add(time.Minute * time.Duration(probs.Duration))
@@ -291,6 +438,8 @@ func main() {
 	aeskey = sha256.Sum256([]byte(cfg.SessionKey))
 	sessionCoding, err = aes.NewCipher(aeskey[:])
 	check(err)
+
+	fmt.Println(startTime)
 
 	s := 'A'
 	for i := 0; i < len(probs.Problems); i++ {

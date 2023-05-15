@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Title - Submissions</title>
+    <title>{{.Contest.Title}} - Submissions</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/style.css">
@@ -11,17 +11,21 @@
 <body>
     <header>
         <nav>
-            <strong>Title</strong>
+            <strong>{{.Contest.Title}}</strong>
             <a href="/">Problems</a>
             <a href="/submissions"><strong>Submissions</strong></a>
-            <div><a href="/login">Login</a>
-                <a href="/register">Register</a>
+            <div>
+                {{if .Session.User | len}}
+                <strong>{{.Session.User}}</strong>
+                {{else}}
+                <a href="/login">Login</a>
+                {{end}}
             </div>
         </nav>
     </header>
     <main>
         <header>
-            <h1>Submission List</h1>
+            <h1>Submissions</h1>
         </header>
         <table class="center">
             <thead>
@@ -38,105 +42,19 @@
                 </tr>
             </thead>
             <tbody>
+                {{range .Listing}}
                 <tr>
-                    <th scope="row">87</th>
-                    <td>lrw04</td>
-                    <td><a href="/problems/1">A + B Problem</a></td>
-                    <td><a href="/submissions/87"><span class="pending">Pending</span></a></td>
-                    <td>Common Lisp</td>
-                    <td>2023 B</td>
-                    <td>2023 ms</td>
-                    <td>2023 B</td>
-                    <td>1:23</td>
+                    <th scope="row">{{.ID}}</th>
+                    <td>{{.User}}</td>
+                    <td><a href="/problem/{{.Problem}}">{{.ProblemTitle}}</a></td>
+                    <td><a href="/submission/{{.ID}}"><span class="{{.Verdict}}"></span></a></td>
+                    <td>{{.LanguageName}}</td>
+                    <td>{{.Code | len}} B</td>
+                    <td>{{.TimeUsage}} ms</td>
+                    <td>{{.MemoryUsage}} MiB</td>
+                    <td>{{.Time | time_format}}</td>
                 </tr>
-                <tr>
-                    <th scope="row">87</th>
-                    <td>lrw04</td>
-                    <td><a href="/problems/1">A + B Problem</a></td>
-                    <td><a href="/submissions/87"><span class="ac">Accepted</span></a></td>
-                    <td>Common Lisp</td>
-                    <td>2023 B</td>
-                    <td>2023 ms</td>
-                    <td>2023 B</td>
-                    <td>1:23</td>
-                </tr>
-                <tr>
-                    <th scope="row">86</th>
-                    <td>lrw04</td>
-                    <td><a href="/problems/1">A + B Problem</a></td>
-                    <td><a href="/submissions/86"><span class="wa">WA on Test 7</span></a></td>
-                    <td>C++</td>
-                    <td>20230 B</td>
-                    <td>2023 ms</td>
-                    <td>2023 B</td>
-                    <td>1:23</td>
-                </tr>
-                <tr>
-                    <th scope="row">85</th>
-                    <td>lrw04</td>
-                    <td><a href="/problems/1">A + B Problem</a></td>
-                    <td><a href="/submissions/85"><span class="tle">TLE on Test 3</span></a></td>
-                    <td>C++</td>
-                    <td>20230 B</td>
-                    <td>2023 ms</td>
-                    <td>2023 B</td>
-                    <td>1:23</td>
-                </tr>
-                <tr>
-                    <th scope="row">85</th>
-                    <td>lrw04</td>
-                    <td><a href="/problems/1">A + B Problem</a></td>
-                    <td><a href="/submissions/85"><span class="mle">MLE on Test 8</span></a></td>
-                    <td>C++</td>
-                    <td>20230 B</td>
-                    <td>2023 ms</td>
-                    <td>2023 B</td>
-                    <td>1:23</td>
-                </tr>
-                <tr>
-                    <th scope="row">85</th>
-                    <td>lrw04</td>
-                    <td><a href="/problems/1">A + B Problem</a></td>
-                    <td><a href="/submissions/85"><span class="re">RE on test 9</span></a></td>
-                    <td>C++</td>
-                    <td>20230 B</td>
-                    <td>2023 ms</td>
-                    <td>2023 B</td>
-                    <td>1:23</td>
-                </tr>
-                <tr>
-                    <th scope="row">85</th>
-                    <td>lrw04</td>
-                    <td><a href="/problems/1">A + B Problem</a></td>
-                    <td><a href="/submissions/85"><span class="ce">Compile Error</span></a></td>
-                    <td>C++</td>
-                    <td>20230 B</td>
-                    <td>2023 ms</td>
-                    <td>2023 B</td>
-                    <td>1:23</td>
-                </tr>
-                <tr>
-                    <th scope="row">85</th>
-                    <td>lrw04</td>
-                    <td><a href="/problems/1">A + B Problem</a></td>
-                    <td><a href="/submissions/85"><span class="uke">Unknown Error</span></a></td>
-                    <td>C++</td>
-                    <td>20230 B</td>
-                    <td>2023 ms</td>
-                    <td>2023 B</td>
-                    <td>1:23</td>
-                </tr>
-                <tr>
-                    <th scope="row">85</th>
-                    <td>lrw04</td>
-                    <td><a href="/problems/1">A + B Problem</a></td>
-                    <td><a href="/submissions/85"><span class="sec">Secutiry Violation</span></a></td>
-                    <td>C++</td>
-                    <td>20230 B</td>
-                    <td>2023 ms</td>
-                    <td>2023 B</td>
-                    <td>1:23</td>
-                </tr>
+                {{end}}
             </tbody>
         </table>
     </main>

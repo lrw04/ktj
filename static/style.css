@@ -1,5 +1,5 @@
 main {
-    max-width: 80ex;
+    max-width: 90ex;
     margin-left: auto;
     margin-right: auto;
 }
@@ -29,7 +29,8 @@ table.examples {
     text-align: center;
 }
 
-.ac {
+.ac::before {
+    content: 'Accepted';
     color: green;
 }
 
@@ -61,7 +62,8 @@ table.examples {
     color: blue;
 }
 
-.pending {
+.pending::before {
+    content: 'Pending';
     color: darkgray;
 }
 
