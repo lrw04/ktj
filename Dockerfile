@@ -1,6 +1,10 @@
-FROM python:3.11
+FROM golang:1.20 as builder
 WORKDIR /app
-COPY requirements.txt ./
-RUN pip install -r requirements.txt
 COPY . .
-CMD ["gunicorn", "app:app", "-c", "./gunicorn_conf.py"]
+RUN go build .
+
+FROM scratch
+WORKDIR /etc/ktj
+COPY --from=builder /app/ktj /app/ktj
+
+ENTRYPOINT ["/app/ktj"]
