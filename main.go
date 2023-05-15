@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -55,6 +54,7 @@ type contest struct {
 
 type config struct {
 	SessionKey string `json:"session_key"`
+	JudgerKey  string `json:"judger_key"`
 	Listen     string `json:"listen"`
 	TimeZone   string `json:"timezone"`
 }
@@ -83,7 +83,7 @@ func randomString(n int) string {
 
 var wd string
 var db *sql.DB
-var probs contest
+var contest_content contest
 var users map[string]string
 var cfg config
 var startTime, freezeTime, endTime time.Time
@@ -173,10 +173,10 @@ type problem_list_template struct {
 
 func problemList(w http.ResponseWriter, r *http.Request) {
 	if notStarted() {
-		renderTemplate(w, "not-started", probs)
+		renderTemplate(w, "not-started", contest_content)
 		return
 	}
-	renderTemplate(w, "home", problem_list_template{getSession(r), probs})
+	renderTemplate(w, "home", problem_list_template{getSession(r), contest_content})
 }
 
 type problem_page_template struct {
@@ -189,7 +189,7 @@ type problem_page_template struct {
 
 func problemPage(w http.ResponseWriter, r *http.Request) {
 	if notStarted() {
-		renderTemplate(w, "not-started", probs)
+		renderTemplate(w, "not-started", contest_content)
 		return
 	}
 	// /problem/
@@ -199,12 +199,11 @@ func problemPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	prob_index := int(prob_part[0] - 'A')
-	if prob_index < 0 || prob_index >= len(probs.Problems) {
+	if prob_index < 0 || prob_index >= len(contest_content.Problems) {
 		http.NotFound(w, r)
 		return
 	}
-	fmt.Println(prob_part)
-	renderTemplate(w, "problem", problem_page_template{probs.Title, probs.Problems[prob_index], prob_part, getSession(r), probs})
+	renderTemplate(w, "problem", problem_page_template{contest_content.Title, contest_content.Problems[prob_index], prob_part, getSession(r), contest_content})
 }
 
 type submission struct {
@@ -224,7 +223,7 @@ func getSubmission(id int64) (submission, error) {
 	var sub submission
 	var problem string
 	err := db.QueryRow("select id, user, time, language, code, problem, verdict, time_usage, memory_usage from submissions where id = ?", id).Scan(&sub.ID, &sub.User, &sub.Time, &sub.Language, &sub.Code, &problem, &sub.Verdict, &sub.TimeUsage, &sub.MemoryUsage)
-	sub.LanguageName = probs.Languages[sub.Language]
+	sub.LanguageName = contest_content.Languages[sub.Language]
 	if err != nil {
 		return sub, err
 	}
@@ -244,12 +243,11 @@ type submission_page_template struct {
 
 func submissionPage(w http.ResponseWriter, r *http.Request) {
 	if notStarted() {
-		renderTemplate(w, "not-started", probs)
+		renderTemplate(w, "not-started", contest_content)
 		return
 	}
 	// /submission/
 	ids := r.URL.Path[12:]
-	fmt.Println(r.URL.Path)
 	id, err := strconv.ParseInt(ids, 10, 64)
 	if err != nil {
 		http.NotFound(w, r)
@@ -260,13 +258,12 @@ func submissionPage(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	fmt.Println(contestEnded(time.Now()))
-	renderTemplate(w, "submission", submission_page_template{getSession(r), sub, probs, string('A' + sub.ProblemIndex), probs.Problems[sub.ProblemIndex].Title, (!rankingFrozen(sub.Time)) || contestEnded(time.Now()) || getSession(r).User == sub.User, contestEnded(time.Now()) || getSession(r).User == sub.User})
+	renderTemplate(w, "submission", submission_page_template{getSession(r), sub, contest_content, string('A' + byte(sub.ProblemIndex)), contest_content.Problems[sub.ProblemIndex].Title, (!rankingFrozen(sub.Time)) || contestEnded(time.Now()) || getSession(r).User == sub.User, contestEnded(time.Now()) || getSession(r).User == sub.User})
 }
 
 func submissionHandler(w http.ResponseWriter, r *http.Request) {
 	if notStarted() {
-		renderTemplate(w, "not-started", probs)
+		renderTemplate(w, "not-started", contest_content)
 		return
 	}
 	if r.Method != http.MethodPost {
@@ -279,9 +276,6 @@ func submissionHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	fmt.Println(getSession(r))
-	fmt.Println(r.FormValue("language"))
-	fmt.Println(r.FormValue("code"))
 	result, err := db.Exec(`insert into submissions (user, time, language, code, problem, verdict, time_usage, memory_usage) values (?, ?, ?, ?, ?, ?, ?, ?)`, getSession(r).User, time.Now(), r.FormValue("language"), r.FormValue("code"), problem, "pending", 0, 0)
 	check(err)
 	id, err := result.LastInsertId()
@@ -314,8 +308,8 @@ func getSubmissions() []submission_listing {
 		err := rows.Scan(&c.ID, &c.User, &c.Time, &c.Language, &c.Code, &c.Problem, &c.Verdict, &c.TimeUsage, &c.MemoryUsage)
 		check(err)
 		c.ProblemIndex = int64(c.Problem[0] - 'A')
-		c.ProblemTitle = probs.Problems[c.ProblemIndex].Title
-		c.LanguageName = probs.Languages[c.Language]
+		c.ProblemTitle = contest_content.Problems[c.ProblemIndex].Title
+		c.LanguageName = contest_content.Languages[c.Language]
 		l = append(l, c)
 	}
 	err = rows.Err()
@@ -329,13 +323,12 @@ type submissions_page_template struct {
 	Session session
 }
 
-// TODO
 func submissionsPage(w http.ResponseWriter, r *http.Request) {
 	if notStarted() {
-		renderTemplate(w, "not-started", probs)
+		renderTemplate(w, "not-started", contest_content)
 		return
 	}
-	cont := submissions_page_template{getSubmissions(), probs, getSession(r)}
+	cont := submissions_page_template{getSubmissions(), contest_content, getSession(r)}
 	for i := 0; i < len(cont.Listing); i++ {
 		cont.Listing[i].StatusShown = (!rankingFrozen(cont.Listing[i].Time)) || contestEnded(time.Now()) || getSession(r).User == cont.Listing[i].User
 	}
@@ -345,7 +338,7 @@ func submissionsPage(w http.ResponseWriter, r *http.Request) {
 // TODO
 func standingsPage(w http.ResponseWriter, r *http.Request) {
 	if notStarted() {
-		renderTemplate(w, "not-started", probs)
+		renderTemplate(w, "not-started", contest_content)
 		return
 	}
 }
@@ -354,14 +347,14 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		s, err := r.Cookie("session")
 		if err != nil {
-			renderTemplate(w, "login", probs.Title)
+			renderTemplate(w, "login", contest_content.Title)
 			return
 		}
 		sess := decodeSession(s.Value)
 		if len(sess.User) != 0 {
 			http.Redirect(w, r, "/", http.StatusFound)
 		}
-		renderTemplate(w, "login", probs.Title)
+		renderTemplate(w, "login", contest_content.Title)
 		return
 	}
 	if users[r.FormValue("username")] == r.FormValue("password") && len(users[r.FormValue("username")]) > 0 {
@@ -371,7 +364,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &http.Cookie{Name: "session", Value: encodeSession(sess), Expires: expiration, SameSite: http.SameSiteStrictMode})
 		http.Redirect(w, r, "/", http.StatusFound)
 	} else {
-		renderTemplate(w, "login-fail", probs.Title)
+		renderTemplate(w, "login-fail", contest_content.Title)
 	}
 }
 
@@ -420,7 +413,7 @@ func main() {
 	check(err)
 	probs_s, err := os.ReadFile(path.Join(wd, "contest.json"))
 	check(err)
-	json.Unmarshal(probs_s, &probs)
+	json.Unmarshal(probs_s, &contest_content)
 	users_s, err := os.ReadFile(path.Join(wd, "users.json"))
 	check(err)
 	json.Unmarshal(users_s, &users)
@@ -430,20 +423,18 @@ func main() {
 
 	loc, err := time.LoadLocation(cfg.TimeZone)
 	check(err)
-	startTime, err = time.ParseInLocation("2006-01-02 15:04", probs.Start, loc)
+	startTime, err = time.ParseInLocation("2006-01-02 15:04", contest_content.Start, loc)
 	check(err)
-	freezeTime = startTime.Add(time.Minute * time.Duration(probs.Freeze))
-	endTime = startTime.Add(time.Minute * time.Duration(probs.Duration))
+	freezeTime = startTime.Add(time.Minute * time.Duration(contest_content.Freeze))
+	endTime = startTime.Add(time.Minute * time.Duration(contest_content.Duration))
 
 	aeskey = sha256.Sum256([]byte(cfg.SessionKey))
 	sessionCoding, err = aes.NewCipher(aeskey[:])
 	check(err)
 
-	fmt.Println(startTime)
-
 	s := 'A'
-	for i := 0; i < len(probs.Problems); i++ {
-		probs.Problems[i].ID = string(s)
+	for i := 0; i < len(contest_content.Problems); i++ {
+		contest_content.Problems[i].ID = string(s)
 		s++
 	}
 

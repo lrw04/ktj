@@ -5,7 +5,7 @@ import json
 def main(path: Path):
     tests = []
     for f in path.glob("*.in"):
-        ans = f.with_suffix(".ans")
+        ans = f.with_suffix(".ans") if f.with_suffix(".ans").exists() else f.with_suffix(".out")
         tests.append({"input": f.read_text(), "answer": ans.read_text()})
     print(json.dumps(tests))
 
