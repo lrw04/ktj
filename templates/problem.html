@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>{{.ContestTitle}} - {{.Index}}. {{.Problem.Title}}</title>
+    <title>{{.Config.Title}} - {{.Problem.Title}}</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/style.css">
@@ -11,22 +11,14 @@
 <body>
     <header>
         <nav>
-            <strong>{{.ContestTitle}}</strong>
+            <strong>{{.Config.Title}}</strong>
             <a href="/"><strong>Problems</strong></a>
-            <a href="/submissions">Submissions</a>
-            <a href="/standings">Standings</a>
-            <div>
-                {{if .Session.User | len}}
-                <strong>{{.Session.User}}</strong>
-                {{else}}
-                <a href="/login">Login</a>
-                {{end}}
-            </div>
+            <a href="/submission/">Submissions</a>
         </nav>
     </header>
     <main>
         <article>
-            <h1>{{.Index}}. {{.Problem.Title}}</h1>
+            <h1>{{.Problem.Title}}</h1>
             <div class="center">
                 <p>Time limit: {{.Problem.Time}} ms<br>Memory limit: {{.Problem.Memory}} MiB</p>
             </div>
@@ -55,11 +47,15 @@
         </article>
         <article>
             <h2>Submit</h2>
-            <form action="/submit/{{.Index}}" method="post">
+            <form action="/{{.Index}}" method="post">
+                <p>
+                    <label for="user">User: </label>
+                    <input type="text" name="user">
+                </p>
                 <p><label for="language">Language: </label>
                     <select id="language" name="language" required>
                         <option value="" selected>Select a language…</option>
-                        {{range $k, $v := .Contest.Languages}}
+                        {{range $k, $v := .Config.Languages}}
                         <option value="{{$k}}">{{$v}}</option>
                         {{end}}
                     </select>

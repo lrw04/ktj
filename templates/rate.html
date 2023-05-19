@@ -18,24 +18,9 @@
     </header>
     <main>
         <header>
-            <h1>Problem List</h1>
+            <h1>Rate Limit Exceeded</h1>
         </header>
-        <table class="center">
-            <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Title</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{range $k, $v := .Problems}}
-                <tr>
-                    <th scope="row">{{$k}}</th>
-                    <td><a href="/{{$k}}">{{$v.Title}}</a></td>
-                </tr>
-                {{end}}
-            </tbody>
-        </table>
+        <p>Please submit again after {{.Time | time_format}}.</p>
     </main>
     <footer>
         Made by lrw04

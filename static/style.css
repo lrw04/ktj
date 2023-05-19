@@ -67,6 +67,11 @@ table.examples {
     color: darkgray;
 }
 
+.assigned::before {
+    content: 'Assigned';
+    color: darkgray;
+}
+
 thead {
     padding-bottom: 0.1ex;
     border-bottom: 0.1ex solid black;

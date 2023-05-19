@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>{{.Contest.Title}} - Submissions</title>
+    <title>{{.Config.Title}} - Submissions</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/style.css">
@@ -11,17 +11,9 @@
 <body>
     <header>
         <nav>
-            <strong>{{.Contest.Title}}</strong>
+            <strong>{{.Config.Title}}</strong>
             <a href="/">Problems</a>
-            <a href="/submissions"><strong>Submissions</strong></a>
-            <a href="/standings">Standings</a>
-            <div>
-                {{if .Session.User | len}}
-                <strong>{{.Session.User}}</strong>
-                {{else}}
-                <a href="/login">Login</a>
-                {{end}}
-            </div>
+            <a href="/submission/"><strong>Submissions</strong></a>
         </nav>
     </header>
     <main>
@@ -36,7 +28,7 @@
                     <th scope="col">Problem</th>
                     <th scope="col">Status</th>
                     <th scope="col">Language</th>
-                    <th scope="col">Code Size</th>
+                    <th scope="col">Size</th>
                     <th scope="col">Time</th>
                     <th scope="col">Memory</th>
                     <th scope="col">Submitted at</th>
@@ -47,7 +39,7 @@
                 <tr>
                     <th scope="row">{{.ID}}</th>
                     <td>{{.User}}</td>
-                    <td><a href="/problem/{{.Problem}}">{{.ProblemTitle}}</a></td>
+                    <td><a href="/{{.Problem}}">{{.ProblemTitle}}</a></td>
                     <td><a href="/submission/{{.ID}}"><span class="{{.Verdict}}"></span></a></td>
                     <td>{{.LanguageName}}</td>
                     <td>{{.Code | len}} B</td>
