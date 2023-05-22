@@ -93,7 +93,15 @@ figure img {
     max-width: 100%;
 }
 
-pre {
+pre.input {
+    background-color: lightskyblue;
+}
+
+pre.answer {
+    background-color: pink;
+}
+
+pre.code {
     background-color: #f0f0f0;
 }
 

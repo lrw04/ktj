@@ -28,17 +28,17 @@
                 <thead>
                     <tr>
                         <th scope="col" style="width: 50%">Input</th>
-                        <th scope="col" style="width: 50%">Output</th>
+                        <th scope="col" style="width: 50%">Answer</th>
                     </tr>
                 </thead>
                 <tbody>
                     {{range .Problem.Examples}}
                     <tr>
                         <td style="width: 50%">
-                            <pre><code>{{.Input}}</code></pre>
+                            <pre class="input"><code>{{.Input}}</code></pre>
                         </td>
                         <td style="width: 50%">
-                            <pre><code>{{.Answer}}</code></pre>
+                            <pre class="answer"><code>{{.Answer}}</code></pre>
                         </td>
                     </tr>
                     {{end}}
