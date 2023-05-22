@@ -34,31 +34,38 @@ table.examples {
     color: green;
 }
 
-.wa {
+.wa::before {
+    content: 'Wrong Answer';
     color: red;
 }
 
-.tle {
+.tle::before {
+    content: 'Time Limit Exceeded';
     color: darkblue;
 }
 
-.mle {
+.mle::before {
+    content: 'Memory Limit Exceeded';
     color: darkblue;
 }
 
-.re {
+.re::before {
+    content: 'Runtime Error';
     color: purple;
 }
 
-.ce {
+.ce::before {
+    content: 'Compile Error';
     color: brown;
 }
 
-.uke {
+.uke::before {
+    content: 'Unknown Error';
     color: purple;
 }
 
-.sec {
+.sec::before {
+    content: 'Security Violation';
     color: blue;
 }
 

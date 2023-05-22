@@ -21,14 +21,6 @@
         ],
         "tests": [
             {
-                "input": "1 2\n",
-                "answer": "3\n"
-            },
-            {
-                "input": "4 5\n",
-                "answer": "9\n"
-            },
-            {
                 "input": "10000 20001\n",
                 "answer": "30001\n"
             }

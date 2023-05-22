@@ -40,11 +40,11 @@ type problem struct {
 }
 
 type config struct {
-	JudgerKey  string            `json:"judger_key"`
-	Listen     string            `json:"listen"`
-	TimeZone   string            `json:"timezone"`
-	Title      string            `json:"title"`
-	Languages  map[string]string `json:"languages"`
+	JudgerKey string            `json:"judger_key"`
+	Listen    string            `json:"listen"`
+	TimeZone  string            `json:"timezone"`
+	Title     string            `json:"title"`
+	Languages map[string]string `json:"languages"`
 }
 
 func check(e error) {
@@ -232,11 +232,6 @@ func getPendingSubmission() (submission, error) {
 	return sub, nil
 }
 
-func setAssigned(id int64) {
-	_, err := db.Exec("update submissions set verdict = 'assigned' where id = ?", id)
-	check(err)
-}
-
 type solution struct {
 	Language string `json:"language"`
 	Source   string `json:"source"`
@@ -253,6 +248,7 @@ type assignment_problem struct {
 type assignment struct {
 	Solution solution           `json:"solution"`
 	Problem  assignment_problem `json:"problem"`
+	ID       int64              `json:"id"`
 }
 
 func get_submission_handler(w http.ResponseWriter, r *http.Request) {
@@ -261,7 +257,6 @@ func get_submission_handler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	setAssigned(sub.ID)
 	sub, err = getSubmission(sub.ID)
 	if err != nil {
 		http.NotFound(w, r)
@@ -275,10 +270,31 @@ func get_submission_handler(w http.ResponseWriter, r *http.Request) {
 	a.Problem.Size = probs[sub.Problem].Size
 	a.Problem.Tests = append(probs[sub.Problem].Examples, probs[sub.Problem].Tests...)
 	a.Problem.Time = probs[sub.Problem].Time
+	a.ID = sub.ID
 	json.NewEncoder(w).Encode(a)
 }
 
+func set_status(id int64, time int64, memory int64, status string) {
+	_, err := db.Exec("update submissions set verdict = ?, time_usage = ?, memory_usage = ? where id = ?", status, time, memory, id)
+	check(err)
+}
+
 func update_submission_handler(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.FormValue("submission"), 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	key := r.FormValue("key")
+	if key != cfg.JudgerKey {
+		http.NotFound(w, r)
+	}
+	status := r.FormValue("status")
+	memory, err := strconv.ParseInt(r.FormValue("memory"), 10, 64)
+	check(err)
+	time, err := strconv.ParseInt(r.FormValue("time"), 10, 64)
+	check(err)
+	set_status(id, time, memory, status)
 }
 
 func main() {
