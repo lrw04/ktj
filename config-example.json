@@ -1,0 +1,12 @@
+{
+    "judger_key": "asdfuiop",
+    "listen": ":8080",
+    "timezone": "Asia/Shanghai",
+    "title": "Test OJ",
+    "languages": {
+        "cpp": "C++",
+        "cl": "Common Lisp",
+        "java": "Java",
+        "python": "Python"
+    }
+}

@@ -27,7 +27,7 @@ go.work
 # End of https://www.toptal.com/developers/gitignore/api/go
 
 /config.json
-/contest.json
+/problems.json
 /users.json
 /data.sqlite
 /ktj

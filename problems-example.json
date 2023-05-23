@@ -1,0 +1,29 @@
+{
+    "aplusb": {
+        "title": "A + B Problem",
+        "statements": "<p>Given integers <span class=\"math inline\">a</span> and <span\nclass=\"math inline\">b</span>, please output <span\nclass=\"math inline\">a+b</span>.</p>\n<h2 id=\"input-format\">Input Format</h2>\n<p>The input consists of one line containing two integers separated by a\nspace, <span class=\"math inline\">a</span> and <span\nclass=\"math inline\">b</span>. It is guaranteed that <span\nclass=\"math inline\">0\\le a, b\\le 10^6</span>.</p>\n<h2 id=\"output-format\">Output Format</h2>\n<p>Output one line containing <span class=\"math inline\">a+b</span>.</p>\n",
+        "size": "10M",
+        "memory": 128,
+        "time": 1000,
+        "checker": {
+            "type": "diff",
+            "source": ""
+        },
+        "examples": [
+            {
+                "input": "1 2\n",
+                "answer": "3\n"
+            },
+            {
+                "input": "4 5\n",
+                "answer": "9\n"
+            }
+        ],
+        "tests": [
+            {
+                "input": "10000 20001\n",
+                "answer": "30001\n"
+            }
+        ]
+    }
+}
