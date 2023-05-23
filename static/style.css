@@ -30,42 +30,42 @@ table.examples {
 }
 
 .ac::before {
-    content: 'Accepted';
+    content: 'AC';
     color: green;
 }
 
 .wa::before {
-    content: 'Wrong Answer';
+    content: 'WA';
     color: red;
 }
 
 .tle::before {
-    content: 'Time Limit Exceeded';
+    content: 'TLE';
     color: darkblue;
 }
 
 .mle::before {
-    content: 'Memory Limit Exceeded';
+    content: 'MLE';
     color: darkblue;
 }
 
 .re::before {
-    content: 'Runtime Error';
+    content: 'RE';
     color: purple;
 }
 
 .ce::before {
-    content: 'Compile Error';
+    content: 'CE';
     color: brown;
 }
 
 .uke::before {
-    content: 'Unknown Error';
+    content: 'UKE';
     color: purple;
 }
 
 .sec::before {
-    content: 'Security Violation';
+    content: 'SEC';
     color: blue;
 }
 
